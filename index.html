@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobertura de Estoque — Semina</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,Arial,sans-serif;background:#f4f4f8;font-size:12px;color:#222;}
+.hdr{background:#3A2060;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;}
+.hdr-brand{font-size:18px;font-weight:700;}
+.hdr-accent{width:3px;height:28px;background:#DC1080;border-radius:2px;}
+.hdr-title{font-size:14px;font-weight:600;}
+.hdr-right{margin-left:auto;text-align:right;}
+.hdr-sub{font-size:11px;color:#C8B8E8;}
+.hdr-upd{font-size:10px;color:#9B85C8;margin-top:2px;}
+.hdr-ref{font-size:10px;color:#A78BFA;margin-top:1px;}
+.cards{display:flex;gap:10px;padding:10px 20px 6px;}
+.card{flex:1;border-radius:8px;padding:10px 14px;border:1px solid;}
+.card-lbl{font-size:10px;font-weight:600;}
+.card-num{font-size:22px;font-weight:700;line-height:1.1;}
+.card-sub{font-size:10px;margin-top:1px;}
+.cr{background:#FCEBEB;border-color:#F7C1C1;}.cr .card-lbl,.cr .card-sub{color:#791F1F;}.cr .card-num{color:#A32D2D;}
+.co{background:#FAEEDA;border-color:#FAC775;}.co .card-lbl,.co .card-sub{color:#633806;}.co .card-num{color:#854F0B;}
+.cp{background:#EEEDFE;border-color:#CECBF6;}.cp .card-lbl,.cp .card-sub{color:#26215C;}.cp .card-num{color:#3C3489;}
+.cg{background:#F3F4F6;border-color:#E5E7EB;}.cg .card-lbl,.cg .card-sub{color:#4B5563;}.cg .card-num{color:#1F2937;}
+.toggle-bar{display:flex;align-items:center;gap:12px;padding:8px 20px;background:#fff;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;flex-wrap:wrap;}
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-lbl{font-size:11px;color:#374151;font-weight:600;}
+.tog{position:relative;width:40px;height:22px;}
+.tog input{opacity:0;width:0;height:0;}
+.slid{position:absolute;cursor:pointer;inset:0;background:#D1D5DB;border-radius:22px;transition:.3s;}
+.slid:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slid{background:#7C3AED;}
+input:checked+.slid:before{transform:translateX(18px);}
+.tog-hint{font-size:10px;color:#6B7280;}
+.tog-hint.on{color:#7C3AED;font-weight:600;}
+.sex-badge{background:#EDE8F8;color:#3C3489;border:1px solid #CECBF6;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;}
+.filter-bar{display:flex;gap:8px;align-items:center;padding:8px 20px;background:#f9f9fb;border-bottom:1px solid #E5E7EB;flex-wrap:wrap;}
+.flbl{font-size:10px;color:#6B7280;white-space:nowrap;}
+.sw{position:relative;flex:1;min-width:180px;}
+.sw input{width:100%;padding:6px 10px 6px 28px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;outline:none;font-family:inherit;}
+.sw input:focus{border-color:#7C3AED;}
+.sico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9CA3AF;}
+.fsel{padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;outline:none;cursor:pointer;color:#374151;min-width:130px;font-family:inherit;}
+.fsel:focus{border-color:#7C3AED;}
+.bcl{padding:5px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;color:#6B7280;font-family:inherit;}
+.bcl:hover{background:#F3F4F6;}
+.btn-export{padding:5px 12px;border:1px solid #7C3AED;border-radius:6px;font-size:11px;background:#EDE8F8;cursor:pointer;color:#5B21B6;font-family:inherit;font-weight:600;margin-left:auto;}
+.btn-export:hover{background:#DDD6FE;}
+.rinfo{font-size:10px;color:#6B7280;padding:3px 20px 0;}
+.rinfo strong{color:#3C3489;}
+.tw{padding:4px 20px 20px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+thead tr{background:#3A2060;color:#fff;}
+thead th{padding:7px 8px;text-align:left;font-size:10px;font-weight:600;white-space:nowrap;}
+thead th.r{text-align:right;}
+thead th.th-esp{background:#2D1A50;color:#C4B5FD;text-align:right;}
+thead th.th-esg{background:#1A3A2A;color:#6EE7B7;text-align:right;}
+thead th.th-totc{background:#2D1A50;color:#C4B5FD;text-align:right;}
+tbody tr:nth-child(even){background:#FAFAFA;}
+tbody tr:hover{background:#EEEDFE;}
+tbody td{padding:5px 8px;vertical-align:middle;border-bottom:1px solid #F0EDF8;white-space:nowrap;}
+tbody td.r{text-align:right;font-variant-numeric:tabular-nums;}
+tbody td.desc{white-space:normal;max-width:200px;}
+tbody td.cod{font-size:10px;color:#6B7280;font-family:monospace;}
+tbody td.fab-cell{min-width:90px;}
+.fab-nome{font-size:10px;font-weight:600;}
+.fab-tipo{font-size:9px;margin-top:1px;}
+.fp .fab-nome{color:#3B6D11;}
+.fp .fab-tipo{color:#6B9E50;}
+.ft .fab-nome{color:#185FA5;}
+.ft .fab-tipo{color:#5B8DD9;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
+.bsb{background:#FCEBEB;color:#A32D2D;}.bsi{background:#FAEEDA;color:#854F0B;}.bsa{background:#EEEDFE;color:#3C3489;}
+.ccb{color:#A32D2D;font-weight:700;}.cci{color:#854F0B;font-weight:700;}.cca{color:#3C3489;font-weight:700;}
+.sec td{background:#F3F0FA;font-size:9px;font-weight:700;color:#3C3489;letter-spacing:.4px;text-transform:uppercase;padding:4px 8px;border-top:2px solid #CECBF6;}
+.ent-sp{color:#7C3AED;font-weight:700;}.ent-es{color:#059669;font-weight:700;}.tot-c{color:#7C3AED;font-weight:700;}
+.ent-icon{font-size:10px;margin-left:3px;opacity:.7;}
+mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
+.empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
+.loading{padding:40px 20px;color:#9CA3AF;text-align:center;}
+.error-box{margin:20px;padding:16px 20px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;color:#991B1B;font-size:13px;line-height:1.8;}
+.error-box code{background:#FEE2E2;padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">SEMINA</div>
+  <div class="hdr-accent"></div>
+  <div class="hdr-title">Cobertura de Estoque — Todos os Produtos</div>
+  <div class="hdr-right">
+    <div class="hdr-sub">Estoque atual vs Forecast</div>
+    <div class="hdr-upd" id="last-updated"></div>
+    <div class="hdr-ref" id="data-ref"></div>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card cr"><div class="card-lbl">SKUs críticos</div><div class="card-num" id="cnt-baixa">—</div><div class="card-sub">&lt; 2 meses</div></div>
+  <div class="card co"><div class="card-lbl">SKUs em atenção</div><div class="card-num" id="cnt-ideal">—</div><div class="card-sub">2–4 meses</div></div>
+  <div class="card cp"><div class="card-lbl">SKUs em excesso</div><div class="card-num" id="cnt-alta">—</div><div class="card-sub">&gt; 4 meses</div></div>
+  <div class="card cg"><div class="card-lbl">Exibindo</div><div class="card-num" id="cnt-total">—</div><div class="card-sub" id="cnt-sub">monitorados</div></div>
+</div>
+
+<div class="toggle-bar">
+  <div class="toggle-wrap">
+    <label class="tog">
+      <input type="checkbox" id="togEnt" onchange="render()">
+      <span class="slid"></span>
+    </label>
+    <span class="toggle-lbl">Considerar entrada prevista</span>
+  </div>
+  <span class="tog-hint" id="togHint">Exibindo apenas estoque atual</span>
+  <div class="sex-badge" id="sextaBadge"></div>
+</div>
+
+<div class="filter-bar">
+  <span class="flbl">Filtrar:</span>
+  <div class="sw">
+    <span class="sico">🔍</span>
+    <input type="text" id="q" placeholder="Pesquisar código, SKU, fabricante..." oninput="render()">
+  </div>
+  <select class="fsel" id="fFab" onchange="render()">
+    <option value="">Fabricação — todas</option>
+    <option value="Própria">Própria</option>
+    <option value="Terceiros">Terceiros</option>
+  </select>
+  <select class="fsel" id="fFabricante" onchange="render()">
+    <option value="">Fabricante — todos</option>
+  </select>
+  <select class="fsel" id="fSt" onchange="render()">
+    <option value="">Status — todos</option>
+    <option value="baixa">Baixa Cobertura</option>
+    <option value="ideal">Cobertura Ideal</option>
+    <option value="alta">Alta Cobertura</option>
+  </select>
+  <select class="fsel" id="fEnt" onchange="render()">
+    <option value="">Entrada prevista — todas</option>
+    <option value="sim">Com entrada prevista</option>
+    <option value="nao">Sem entrada prevista</option>
+  </select>
+  <button class="bcl" onclick="clearF()">✕ Limpar</button>
+  <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+</div>
+
+<div class="rinfo" id="info"></div>
+<div id="content"><div class="loading">Carregando dados...</div></div>
+
+<script>
+// ── Próxima sexta ─────────────────────────────────────────────────────────────
+function proxSexta() {
+  var d = new Date();
+  var diff = (5 - d.getDay() + 7) % 7;
+  if (diff === 0) diff = 7;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('pt-BR');
+}
+var SEXTA = proxSexta();
+document.getElementById('sextaBadge').textContent = '📦 Próxima sexta: ' + SEXTA;
+
+// ── Fabricação por código ─────────────────────────────────────────────────────
+function getFab(cod) {
+  var c = (cod || '').trim();
+  if (c === '0000-028') return 'Terceiros';
+  if (c.indexOf('0072') === 0) return 'Própria';
+  return 'Terceiros';
+}
+
+// ── Número a partir de string BR ──────────────────────────────────────────────
+function toN(v) {
+  if (!v || v === '#N/A' || v.trim() === '') return 0;
+  var n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+var DATA = [];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getSt(m) { return m === null ? 'alta' : m < 2 ? 'baixa' : m <= 4 ? 'ideal' : 'alta'; }
+function fmtN(n)  { return (n === null || n === undefined) ? '—' : Math.round(n).toLocaleString('pt-BR'); }
+function fmtC(m)  { return m === null ? '— m' : m.toFixed(1).replace('.', ',') + ' m'; }
+function slbl(s)  { return s === 'baixa' ? 'Baixa Cob.' : s === 'ideal' ? 'Cob. Ideal' : 'Alta Cob.'; }
+function hasEntrada(r) { return r.entSP > 0 || r.entES > 0; }
+function hl(t, q) {
+  if (!q) return t;
+  try { return t.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); }
+  catch(e) { return t; }
+}
+
+// ── Popula filtro de fabricantes ──────────────────────────────────────────────
+function populateFabricanteFilter() {
+  var sel = document.getElementById('fFabricante');
+  var fabricantes = [];
+  DATA.forEach(function(r) {
+    if (r.fabricante && fabricantes.indexOf(r.fabricante) === -1) {
+      fabricantes.push(r.fabricante);
+    }
+  });
+  fabricantes.sort();
+  fabricantes.forEach(function(f) {
+    var opt = document.createElement('option');
+    opt.value = f;
+    opt.textContent = f;
+    sel.appendChild(opt);
+  });
+}
+
+// ── Exportar CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  var comEnt = document.getElementById('togEnt').checked;
+  var rows   = getFilteredRows();
+  var headers = ['Fabricante','Codigo','Descricao','Est. SP','Est. ES','Total'];
+  if (comEnt) headers = headers.concat(['Ent. SP ('+SEXTA+')','Ent. ES ('+SEXTA+')','Total c/ Entrada']);
+  headers = headers.concat(['Forecast','Cobertura','Status']);
+  var lines = [headers.join(';')];
+  rows.forEach(function(r) {
+    var cols = [r.fabricante, r.cod, '"'+r.desc+'"', r.sp, r.es, r.tot];
+    if (comEnt) cols = cols.concat([r.entSP, r.entES, r.totEf]);
+    cols = cols.concat([r.fc || '', fmtC(r.m), slbl(r.st)]);
+    lines.push(cols.join(';'));
+  });
+  var blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'estoque_semina_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Linhas filtradas ──────────────────────────────────────────────────────────
+function getFilteredRows() {
+  var q           = document.getElementById('q').value.trim().toLowerCase();
+  var fFab        = document.getElementById('fFab').value;
+  var fFabricante = document.getElementById('fFabricante').value;
+  var fSt         = document.getElementById('fSt').value;
+  var fEnt        = document.getElementById('fEnt').value;
+  var comEnt      = document.getElementById('togEnt').checked;
+  var sOrd        = { baixa: 0, ideal: 1, alta: 2 };
+
+  var rows = DATA.map(function(r) {
+    var spEf    = r.sp + (comEnt ? r.entSP : 0);
+    var esEf    = r.es + (comEnt ? r.entES : 0);
+    var totEf   = spEf + esEf;
+    var totReal = r.sp + r.es;
+    var m       = (r.fc && r.fc > 0) ? totEf / r.fc : null;
+    var st      = getSt(m);
+    return { cod:r.cod, fab:r.fab, fabricante:r.fabricante, desc:r.desc,
+             sp:r.sp, entSP:r.entSP, es:r.es, entES:r.entES,
+             tot:totReal, fc:r.fc, spEf:spEf, esEf:esEf, totEf:totEf, m:m, st:st };
+  }).filter(function(r) {
+    if (fFab        && r.fab        !== fFab)        return false;
+    if (fFabricante && r.fabricante !== fFabricante) return false;
+    if (fSt         && r.st         !== fSt)         return false;
+    if (fEnt === 'sim' && !hasEntrada(r)) return false;
+    if (fEnt === 'nao' &&  hasEntrada(r)) return false;
+    if (q) {
+      var hay = (r.cod + ' ' + r.desc + ' ' + r.fabricante + ' ' + r.fab).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+
+  rows.sort(function(a, b) {
+    if (q) {
+      var aT = (a.cod.toLowerCase().indexOf(q)===0 || a.desc.toLowerCase().indexOf(q)===0 || a.fabricante.toLowerCase().indexOf(q)===0) ? 0 : 1;
+      var bT = (b.cod.toLowerCase().indexOf(q)===0 || b.desc.toLowerCase().indexOf(q)===0 || b.fabricante.toLowerCase().indexOf(q)===0) ? 0 : 1;
+      if (aT !== bT) return aT - bT;
+    }
+    var sd = sOrd[a.st] - sOrd[b.st];
+    if (sd !== 0) return sd;
+    return (a.m === null ? 999 : a.m) - (b.m === null ? 999 : b.m);
+  });
+
+  return rows;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  var q      = document.getElementById('q').value.trim().toLowerCase();
+  var comEnt = document.getElementById('togEnt').checked;
+
+  document.getElementById('togHint').textContent = comEnt
+    ? '✅ Estoque atual + entradas previstas na sexta'
+    : 'Exibindo apenas estoque atual';
+  document.getElementById('togHint').className = 'tog-hint' + (comEnt ? ' on' : '');
+
+  var rows = getFilteredRows();
+
+  document.getElementById('cnt-baixa').textContent = rows.filter(function(r){return r.st==='baixa';}).length;
+  document.getElementById('cnt-ideal').textContent = rows.filter(function(r){return r.st==='ideal';}).length;
+  document.getElementById('cnt-alta').textContent  = rows.filter(function(r){return r.st==='alta';}).length;
+  document.getElementById('cnt-total').textContent = rows.length;
+  document.getElementById('cnt-sub').textContent   = rows.length < DATA.length ? 'de '+DATA.length+' SKUs' : 'monitorados';
+  document.getElementById('info').innerHTML = rows.length < DATA.length
+    ? '<strong>'+rows.length+'</strong> de '+DATA.length+' SKUs exibidos' : '';
+
+  if (!rows.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">Nenhum SKU encontrado.</div>';
+    return;
+  }
+
+  var sLbl = { baixa:'🔴 Baixa cobertura — menos de 2 meses', ideal:'🟡 Cobertura ideal — 2 a 4 meses', alta:'🟣 Alta cobertura — acima de 4 meses' };
+  var nCols   = comEnt ? 12 : 9;
+  var showSec = !q;
+  var lastSt  = null;
+
+  var thEntSP = comEnt ? '<th class="th-esp">Ent. SP<br><small style="font-weight:400">'+SEXTA+'</small></th>' : '';
+  var thEntES = comEnt ? '<th class="th-esg">Ent. ES<br><small style="font-weight:400">'+SEXTA+'</small></th>' : '';
+  var thTotC  = comEnt ? '<th class="th-totc">Total c/ Ent.</th>' : '';
+
+  var html = '<div class="tw"><table><thead><tr>'
+    + '<th>Fabricante</th><th>Código</th><th>Descrição (SKU)</th>'
+    + '<th class="r">Est. SP</th>' + thEntSP
+    + '<th class="r">Est. ES</th>' + thEntES
+    + '<th class="r">Total</th>'   + thTotC
+    + '<th class="r">Forecast</th><th class="r">Cob.</th><th>Status</th>'
+    + '</tr></thead><tbody>';
+
+  rows.forEach(function(r) {
+    if (showSec && r.st !== lastSt) {
+      html += '<tr class="sec"><td colspan="'+nCols+'">'+sLbl[r.st]+'</td></tr>';
+      lastSt = r.st;
+    }
+    var fabClass  = r.fab === 'Própria' ? 'fp' : 'ft';
+    var fabTipo   = r.fab === 'Própria' ? 'Fabricação própria' : 'Terceiros';
+    var cCob      = r.st === 'baixa' ? 'ccb' : r.st === 'ideal' ? 'cci' : 'cca';
+    var sBdg      = r.st === 'baixa' ? 'bsb' : r.st === 'ideal' ? 'bsi' : 'bsa';
+    var tdEntSP   = comEnt ? '<td class="r ent-sp">'+(r.entSP>0?fmtN(r.entSP):'—')+'</td>' : '';
+    var tdEntES   = comEnt ? '<td class="r ent-es">'+(r.entES>0?fmtN(r.entES):'—')+'</td>' : '';
+    var tdTotC    = comEnt ? '<td class="r tot-c">'+fmtN(r.totEf)+'</td>' : '';
+    var entIcon   = (!comEnt && hasEntrada(r)) ? ' <span class="ent-icon" title="Tem entrada prevista na sexta">📦</span>' : '';
+
+    html += '<tr>'
+      + '<td class="fab-cell"><div class="'+fabClass+'">'
+      +   '<div class="fab-nome">'+hl(r.fabricante, q)+'</div>'
+      +   '<div class="fab-tipo">'+fabTipo+'</div>'
+      + '</div></td>'
+      + '<td class="cod">'+hl(r.cod,q)+'</td>'
+      + '<td class="desc">'+hl(r.desc,q)+entIcon+'</td>'
+      + '<td class="r">'+fmtN(r.sp)+'</td>'+tdEntSP
+      + '<td class="r">'+fmtN(r.es)+'</td>'+tdEntES
+      + '<td class="r" style="font-weight:700">'+fmtN(r.tot)+'</td>'+tdTotC
+      + '<td class="r">'+fmtN(r.fc)+'</td>'
+      + '<td class="r '+cCob+'">'+fmtC(r.m)+'</td>'
+      + '<td><span class="badge '+sBdg+'">'+slbl(r.st)+'</span></td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function clearF() {
+  document.getElementById('q').value = '';
+  document.getElementById('fFab').value = '';
+  document.getElementById('fFabricante').value = '';
+  document.getElementById('fSt').value = '';
+  document.getElementById('fEnt').value = '';
+  render();
+}
+
+// ── Carregar CSV por índice ───────────────────────────────────────────────────
+// Colunas esperadas:
+// 0=Codigo | 1=Fabricante | 2=Descrição | 3=SP | 4=EntSP | 5=ES | 6=EntES | 7=Total | 8=Forecast | 9=Meses | 10=Data(opcional)
+Papa.parse('estoque.csv', {
+  download: true,
+  header: false,
+  encoding: 'UTF-8',
+  skipEmptyLines: true,
+  complete: function(results) {
+    var rows = results.data;
+    if (!rows || rows.length < 2) {
+      document.getElementById('content').innerHTML =
+        '<div class="error-box"><strong>CSV vazio ou sem dados.</strong><br>Verifique o arquivo estoque.csv no repositório.</div>';
+      return;
+    }
+
+    // Coluna de data de referência (opcional, coluna 10)
+    if (rows.length > 1 && rows[1].length > 10 && rows[1][10]) {
+      document.getElementById('data-ref').textContent = '📅 Dados de: ' + rows[1][10].trim();
+    }
+
+    DATA = [];
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r || r.length < 8) continue;
+      var cod   = (r[0] || '').trim();
+      var fab_n = (r[1] || '').trim();   // Fabricante
+      var desc  = (r[2] || '').trim();   // Descrição
+      var total = (r[7] || '').trim();   // Total
+      if (!desc || !total || total === '#N/A') continue;
+      DATA.push({
+        cod:        cod,
+        fab:        getFab(cod),
+        fabricante: fab_n || 'Semina',
+        desc:       desc,
+        sp:         toN(r[3]),  // SP
+        entSP:      toN(r[4]),  // Proxima Entrada em SP
+        es:         toN(r[5]),  // VIX ES
+        entES:      toN(r[6]),  // Proxima Entrada em ES
+        tot:        toN(total),
+        fc:         toN(r[8]) || null  // ForeCast Farma
+      });
+    }
+
+    if (DATA.length === 0) {
+      document.getElementById('content').innerHTML =
+        '<div class="error-box"><strong>Nenhum dado válido encontrado no CSV.</strong><br>'
+        + 'Verifique se as colunas estão na ordem correta:<br>'
+        + '<code>Codigo | Fabricante | Descrição | SP | Ent.SP | ES | Ent.ES | Total | Forecast | Meses</code></div>';
+      return;
+    }
+
+    document.getElementById('last-updated').textContent =
+      'Carregado em ' + new Date().toLocaleString('pt-BR');
+
+    populateFabricanteFilter();
+    render();
+  },
+  error: function(err) {
+    document.getElementById('content').innerHTML =
+      '<div class="error-box"><strong>Não foi possível carregar o arquivo.</strong><br><br>'
+      + 'Verifique se <code>estoque.csv</code> está na mesma pasta que <code>index.html</code>.<br>'
+      + 'Acesse pelo link público do GitHub Pages.<br><br>'
+      + '<em>Erro: ' + (err && err.message ? err.message : String(err)) + '</em></div>';
+  }
+});
+</script>
+</body>
+</html>
